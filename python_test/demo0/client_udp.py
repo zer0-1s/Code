@@ -15,7 +15,7 @@ s.close()
 '''
 output:
 (b'\n', ('127.0.0.1', 80))
-we can listen to local 80 port to watch the echo,and we could gety this.
+we can listen to local 80 port to watch the echo,and we could get this.
 ➜  Desktop nc -lu  -p 80  
 this is 80 port as all we known!
 
