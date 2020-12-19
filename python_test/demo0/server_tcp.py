@@ -6,6 +6,11 @@ server_port=9999
 # init socket 
 server=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 server.bind((server_ip,server_port))
+'''
+used socket.gethostname() so that the socket would be visible to the outside world. 
+If we had used s.bind(('localhost', 80)) or s.bind(('127.0.0.1', 80)) we would still have a “server” socket, 
+but one that was only visible within the same machine.
+'''
 server.listen(5)
 
 
@@ -17,7 +22,7 @@ def handle_client(client):
     client.send(b"the is web server!")
     client.close()
 while True:
-    client,addr=server.accept()
+    client,addr=server.accept()# addr represent truple 
     print ("[*] accept from is %s:%d"%(addr[0],addr[1]))
     
     client_handler=threading.Thread(target=handle_client,args=(client,))
