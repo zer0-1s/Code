@@ -16,3 +16,8 @@ Hello world
 Goodbye
 ctf@ubuntu:~/D
 </code>
+
+```
+printf() -> printk()，但需要注意的是 printk() 不一定会把内容显示到终端上，但一定在内核缓冲区里，可以通过 dmesg 查看效果
+```
+
