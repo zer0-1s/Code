@@ -54,9 +54,12 @@ char* String_Add(char* p,char* q,int strlen)
     *p=*q;
     return temp;
 }
-void  main()
+void  main(int argc ,const char * argv[])
 {   char buf[100];
-    char * temp="\\basic_io.c";
+    char * temp="\\basic_io.c";// Windows
+    /*char *temp="/buf.c"; 
+      temp in Linux
+    */
     char *filename;
     int len;
     char ch;
