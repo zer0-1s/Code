@@ -65,6 +65,7 @@ void Instruct_Addr_Imcomplment(int *instruct_addr)
    
 }
 /*考虑到实际的指令的长度不一,虽然是数组的结构,但是每个页面也要容纳10个地址*/
+/*
 void Instruct_Virtual_Page(Page* Newpage)
 {
   //Page Newpage[32];
@@ -75,11 +76,21 @@ void Instruct_Virtual_Page(Page* Newpage)
     {   
         Newpage[i/10].p[i%10]=&addr[i];
         //test2:
-       /* printf("%d ",*(Newpage[i/10].p[i%10])/10);
+        printf("%d ",*(Newpage[i/10].p[i%10])/10);
         if((i+1)%10==0&&i!=0)
-        printf("\n");*/
+        printf("\n");
     }
-    
+    return ;
+}
+*/
+
+void Instruct_Virtual_Page(Page* Newpage,int * instruct)
+{
+
+  for(int i=0;i<320;i++)
+    {   
+        Newpage[(instruct[i])/10].p[(instruct[i])%10]=&instruct[i];
+    }
     return ;
 }
 //我的理解顺序访问320条指令，但是其存储在虚拟页面（32k）,10页,每个页面10条指令,要通过一定的页面置换算法来载入内存
@@ -185,9 +196,9 @@ int OPT_Replace(int *Pagenum,int memsize)
     temp[t]=Pagenum[t];
     t++;
     }
-    for(int i=0;i<memsize;i++)
-    printf("|%d| ",temp[i]);
-    printf("\n");
+   // for(int i=0;i<memsize;i++)
+   // printf("|%d| ",temp[i]);
+    //printf("\n");
     conut+=memsize;
     while(t<320)
     {
@@ -201,9 +212,137 @@ int OPT_Replace(int *Pagenum,int memsize)
     Get_Maxoffset(temp,Pagenum,t+1,memsize);//没有驻留内存进行交换
     conut++;
    }
-    for(int i=0;i<memsize;i++)
-    printf("|%d| ",temp[i]);
-    printf("\n");
+    //for(int i=0;i<memsize;i++)
+   // printf("|%d| ",temp[i]);
+   // printf("\n");
+    t++;
+    }
+    return conut;
+}
+// FIFO的算法有一个特征即：从上到下依次置换内存,当然这也与第一次调入内存是有关,即可以简化
+int FIFO_Replace(int *Pagenum,int memsize)
+{
+    int conut=0;//记录缺页中断的次数,当扫描完memsize发现没有就纪录一次缺页中断
+    int t=0,f,h,j;
+    int temp[memsize];//代表实际的内存块，以k为单位
+    int temp2;//页面交换的中介
+    int turn=0;
+    while(t<memsize)
+    {
+    temp[t]=Pagenum[t];
+    t++;
+    }
+   // for(int i=0;i<memsize;i++)
+   // printf("|%d| ",temp[i]);
+    //printf("\n");
+    conut+=memsize;
+    while(t<320)
+    {
+    for(j=0;j<memsize;j++)
+    {
+    if(temp[j]==(Pagenum[t]))//是否本就驻留内存
+         break;
+    }
+    if(j==memsize)
+   {
+    //Get_Maxoffset(temp,Pagenum,t+1,memsize);//没有驻留内存进行交换
+    temp[turn]=Pagenum[t];
+    turn=(turn%memsize)+1;
+    conut++;
+   }
+
+    t++;
+    }
+    return conut;
+
+}
+void  LRU_offset(int*temp,int *Pagenum,int t,int memsize)
+{
+
+    int offset,i=0,j,count;
+    int memflag[memsize],flag=0;
+    int temp2;//中间的中介变量
+    int Max=0;
+    while(i<memsize)
+    {
+    for(int j=t;j>=0;j--)
+    { 
+    if((Pagenum[j])==temp[i])
+    {
+    memflag[i]=t-j;
+    break;
+    }
+    if(j==320)
+    {
+    memflag[i]=500;//means not found
+    flag=1;
+    }
+    }
+    i++;
+    }
+
+
+
+    i=i-memsize;//to save space
+    if(flag==1)
+    {while(i<memsize)
+    {
+    if(memflag[i]==500)
+    temp[i]=Pagenum[t];
+    //swap(&temp[i],&Pagenum[t]);//内存块中存在没访问的页面的交换 
+    i++;
+    }
+    }
+
+
+    if(flag==0)
+    {
+    while(i<memsize)
+    {
+    if(memflag[i]>Max)
+    {
+    Max=memflag[i];
+    temp2=i;
+    }
+    i++;
+    }
+    temp[temp2]=Pagenum[t];
+    //swap(&temp[i],&Pagenum[t]);//正常交换页面
+    }
+    return ;
+
+}
+int LRU_Replace(int *Pagenum,int memsize)
+{
+
+    int conut=0;//记录缺页中断的次数,当扫描完memsize发现没有就纪录一次缺页中断
+    int t=0,f,h,j;
+    int temp[memsize];//代表实际的内存块，以k为单位
+    int temp2;//页面交换的中介
+    int turn=0;
+    while(t<memsize)
+    {
+    temp[t]=Pagenum[t];
+    t++;
+    }
+   // for(int i=0;i<memsize;i++)
+   // printf("|%d| ",temp[i]);
+    //printf("\n");
+    conut+=memsize;
+    while(t<320)
+    {
+    for(j=0;j<memsize;j++)
+    {
+    if(temp[j]==(Pagenum[t]))//是否本就驻留内存
+         break;
+    }
+    if(j==memsize)
+   {
+    //Get_Maxoffset(temp,Pagenum,t+1,memsize);//没有驻留内存进行交换
+    LRU_offset(temp,Pagenum,t-1,memsize);
+    conut++;
+   }
+
     t++;
     }
     return conut;
@@ -215,31 +354,38 @@ q[i]=Newpage[i/10].p[i%10];
 return;
 }
 int main()
-{   srand((unsigned)time(NULL));
+{   
+    srand((unsigned)time(NULL));
     int Pagesize[29];
     Page Newpage[32];
-    int *p,*r;
+    int *p,*r,turn=0;
     int temp[320];
     int** q;
-    int opt_count;
+    int opt_count,fifo_count,lru_count;
+    double opt_target=0.0,fifo_target=0.0,lru_target=0.0;
     /*init Pagesize*/
     for(int i=0;i<29;i++)
     Pagesize[i]=i+4;
-    /*construct instruct[]*/
+    while(turn++<10)
+   { /*construct instruct[]*/
     p=Instruct_Addr();
-   // q=&p;
     /*convert to virtual page*/
-    Instruct_Virtual_Page(Newpage);
+    Instruct_Virtual_Page(Newpage,p);
     //Convet_to_Page(Newpage,q);
     for(int i=0;i<320;i++)
     {temp[i]=p[i]/10;
-    //printf("%d ",10*temp[i]);
     }
-    //printf("\n");
     r=temp;
     opt_count=OPT_Replace(r,10);
-    printf("%d ",opt_count);
-    printf("%lf",(float)opt_count/320);
-
+    opt_target+=(float)opt_count/320;
+    fifo_count=FIFO_Replace(r,10);
+    fifo_target+=(float)fifo_count/320;
+    lru_count=LRU_Replace(r,10);
+    fifo_target+=(float)lru_count/320;
+    }
+    printf("OPT %lf  ",opt_target/10);
+    printf("FIFO:%lf  ",fifo_target/10);
+    printf("LRU:%lf  ",lru_target/10);
     return 0;
+
 }
