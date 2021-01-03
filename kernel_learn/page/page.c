@@ -5,7 +5,12 @@
 #define instruct_num 320
 #define MAX_INSTRUCT 10000
 #define Page_Interrupt 100
-
+typedef struct FIFO_Page
+{
+    int num;
+    struct FIFO_Page * next;
+}FIFO_Page;
+typedef FIFO_Page *FIFO_Pageptr;
 typedef struct Page
 {
     int* p[10];
@@ -24,14 +29,7 @@ int Mod_Num(int m)
     m=m%instruct_num;
     return m;
 }
-/*
-void Instruction_Generent(int * temp,int m)
-{
-    for(int i=0;i<instruct_num;i++)
-     temp[i]=rand()%m;
-     return ;
-} 
-*/
+
 //构造可选指令集合
 void Instruct_Addr_Imcomplment(int *instruct_addr)
 {   
@@ -53,37 +51,7 @@ void Instruct_Addr_Imcomplment(int *instruct_addr)
     i++;
     m=Mod_Num(m2+1);//m=m2+1
     }
-    /*the following is for testing */
-    /*
-   while(i>0)
-   {
-    printf("%d ",instruct_addr[i-1]);
-    i--;
-   }
-   printf("\n");*/
-   
-   
 }
-/*考虑到实际的指令的长度不一,虽然是数组的结构,但是每个页面也要容纳10个地址*/
-/*
-void Instruct_Virtual_Page(Page* Newpage)
-{
-  //Page Newpage[32];
-  int addr[320],j=0;
-  while(j<320)
-  addr[j++]=j;
-  for(int i=0;i<320;i++)
-    {   
-        Newpage[i/10].p[i%10]=&addr[i];
-        //test2:
-        printf("%d ",*(Newpage[i/10].p[i%10])/10);
-        if((i+1)%10==0&&i!=0)
-        printf("\n");
-    }
-    return ;
-}
-*/
-
 void Instruct_Virtual_Page(Page* Newpage,int * instruct)
 {
 
@@ -102,16 +70,6 @@ int * Instruct_Addr()
     return instruct_addr;
 
 }
-/*int Scan_Mem(int* scan,int *page,int scanlen)
-{   int flag=1;
-    for(int i=0;i<scanlen;i++)
-    {
-        if(scan[i]==*(page))
-        flag=0;
-    }
-    return flag;
-
-}*/
 void swap(int * a, int * b)
 {
     int temp;
@@ -144,9 +102,6 @@ void  Get_Maxoffset(int*temp,int *Pagenum,int t,int memsize)
     }
     i++;
     }
-
-
-
     i=i-memsize;//to save space
     if(flag==1)
     {while(i<memsize)
@@ -182,23 +137,12 @@ int OPT_Replace(int *Pagenum,int memsize)
     int conut=0;//记录缺页中断的次数,当扫描完memsize发现没有就纪录一次缺页中断
     int t=0,f,h,j;
     int temp[memsize];//代表实际的内存块，以k为单位
-    int temp2;//页面交换的中介
-   // while(temp[t]!=100&&t<memsize)
-    //   temp[t++]=100;//作为内存扫描的标识
-    /* while(i>0)
-   {
-    printf("%d ",Pagenum[i-1]);
-    i--;
-   }*/
-   
+    int temp2;//页面交换的中介   
     while(t<memsize)
     {
     temp[t]=Pagenum[t];
     t++;
     }
-   // for(int i=0;i<memsize;i++)
-   // printf("|%d| ",temp[i]);
-    //printf("\n");
     conut+=memsize;
     while(t<320)
     {
@@ -212,12 +156,42 @@ int OPT_Replace(int *Pagenum,int memsize)
     Get_Maxoffset(temp,Pagenum,t+1,memsize);//没有驻留内存进行交换
     conut++;
    }
-    //for(int i=0;i<memsize;i++)
-   // printf("|%d| ",temp[i]);
-   // printf("\n");
     t++;
     }
     return conut;
+}
+//实现memsize的链表结构,反映出标号
+void FIFO_LIST(int *Pagenum,int memsize,int t)
+{
+    FIFO_Pageptr L,p,q,temp,nL;
+    /*init FIFO_LIST*/
+    L=(FIFO_Pageptr)malloc(sizeof(FIFO_Page));
+    L->num=Pagenum[0];
+    p=L;
+    for(int i=1;i<memsize;i++)
+    {
+    q=p;
+    p=(FIFO_Pageptr)malloc(sizeof(FIFO_Page));
+    p->num=Pagenum[i];
+    q->next=p;
+    }
+    p->next=NULL;
+    /*look up elem in FIFO_LIST*/
+    temp=L;
+    while(Pagenum[t]!=temp->num)
+    temp=temp->next;
+    /*change ptr relationship*/
+    if(temp==NULL)
+    {
+    /*add tail node*/
+    temp=(FIFO_Pageptr)malloc(sizeof(FIFO_Page));
+    temp->num=Pagenum[t];
+    temp->next=NULL;
+    /*change head node */
+    nL=L;
+    L=L->next;
+    free(nL);
+    }
 }
 // FIFO的算法有一个特征即：从上到下依次置换内存,当然这也与第一次调入内存是有关,即可以简化,即采用一种不用链表也可以实现的方法
 int FIFO_Replace(int *Pagenum,int memsize)
@@ -232,9 +206,6 @@ int FIFO_Replace(int *Pagenum,int memsize)
     temp[t]=Pagenum[t];
     t++;
     }
-   // for(int i=0;i<memsize;i++)
-   // printf("|%d| ",temp[i]);
-    //printf("\n");
     conut+=memsize;
     while(t<320)
     {
@@ -251,9 +222,6 @@ int FIFO_Replace(int *Pagenum,int memsize)
     turn=turn%memsize;
     conut++;
    }
-    //for(int i=0;i<memsize;i++)
-    //printf("|%d| ",temp[i]);
-    //printf("\n");
     t++;
     }
     return conut;
@@ -293,6 +261,7 @@ void  LRU_offset(int*temp,int *Pagenum,int t,int memsize)
     return ;
 
 }
+
 int LRU_Replace(int *Pagenum,int memsize)
 {
 
@@ -306,9 +275,6 @@ int LRU_Replace(int *Pagenum,int memsize)
     temp[t]=Pagenum[t];
     t++;
     }
-   // for(int i=0;i<memsize;i++)
-   // printf("|%d| ",temp[i]);
-    //printf("\n");
     conut+=memsize;
     while(t<320)
     {
