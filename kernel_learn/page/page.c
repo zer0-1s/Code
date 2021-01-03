@@ -170,7 +170,7 @@ void  Get_Maxoffset(int*temp,int *Pagenum,int t,int memsize)
     }
     i++;
     }
-    temp[temp2]=Pagenum[t];
+    temp[temp2]=Pagenum[t-1];
     //swap(&temp[i],&Pagenum[t]);//正常交换页面
     }
     return ;
@@ -219,7 +219,7 @@ int OPT_Replace(int *Pagenum,int memsize)
     }
     return conut;
 }
-// FIFO的算法有一个特征即：从上到下依次置换内存,当然这也与第一次调入内存是有关,即可以简化
+// FIFO的算法有一个特征即：从上到下依次置换内存,当然这也与第一次调入内存是有关,即可以简化,即采用一种不用链表也可以实现的方法
 int FIFO_Replace(int *Pagenum,int memsize)
 {
     int conut=0;//记录缺页中断的次数,当扫描完memsize发现没有就纪录一次缺页中断
@@ -247,10 +247,13 @@ int FIFO_Replace(int *Pagenum,int memsize)
    {
     //Get_Maxoffset(temp,Pagenum,t+1,memsize);//没有驻留内存进行交换
     temp[turn]=Pagenum[t];
-    turn=(turn%memsize)+1;
+    turn++;
+    turn=turn%memsize;
     conut++;
    }
-
+    //for(int i=0;i<memsize;i++)
+    //printf("|%d| ",temp[i]);
+    //printf("\n");
     t++;
     }
     return conut;
@@ -260,7 +263,7 @@ void  LRU_offset(int*temp,int *Pagenum,int t,int memsize)
 {
 
     int offset,i=0,j,count;
-    int memflag[memsize],flag=0;
+    int memflag[memsize];
     int temp2;//中间的中介变量
     int Max=0;
     while(i<memsize)
@@ -272,43 +275,21 @@ void  LRU_offset(int*temp,int *Pagenum,int t,int memsize)
     memflag[i]=t-j;
     break;
     }
-    if(j==320)
-    {
-    memflag[i]=500;//means not found
-    flag=1;
-    }
     }
     i++;
     }
-
-
-
     i=i-memsize;//to save space
-    if(flag==1)
-    {while(i<memsize)
+    for(int j=0;j<memsize;j++)
     {
-    if(memflag[i]==500)
-    temp[i]=Pagenum[t];
-    //swap(&temp[i],&Pagenum[t]);//内存块中存在没访问的页面的交换 
-    i++;
+    if(memflag[j]>=Max)
+    {
+    Max=memflag[j];
+    temp2=j;
     }
     }
-
-
-    if(flag==0)
-    {
-    while(i<memsize)
-    {
-    if(memflag[i]>Max)
-    {
-    Max=memflag[i];
-    temp2=i;
-    }
-    i++;
-    }
-    temp[temp2]=Pagenum[t];
+    temp[temp2]=Pagenum[t+1];
     //swap(&temp[i],&Pagenum[t]);//正常交换页面
-    }
+    
     return ;
 
 }
@@ -381,11 +362,11 @@ int main()
     fifo_count=FIFO_Replace(r,10);
     fifo_target+=(float)fifo_count/320;
     lru_count=LRU_Replace(r,10);
-    fifo_target+=(float)lru_count/320;
+    lru_target+=(float)lru_count/320;
     }
-    printf("OPT %lf  ",opt_target/10);
-    printf("FIFO:%lf  ",fifo_target/10);
-    printf("LRU:%lf  ",lru_target/10);
+    printf("OPT %lf  ",(1.0-opt_target/10));
+    printf("FIFO:%lf  ",(1.0-fifo_target/10));
+    printf("LRU:%lf  ",(1.0-lru_target/10));
     return 0;
 
 }
