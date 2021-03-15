@@ -1,7 +1,7 @@
 import socket
 
 target_host="www.baidu.com"
-target_port=80
+target_port=80# http服务
 
 # set an socket object
 '''
